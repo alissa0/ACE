@@ -26,6 +26,11 @@ namespace ACE.Server.Entity
         public const uint ArmorLayeringToolTop = 42724;
         public const uint ArmorLayeringToolBottom = 42726;
 
+        /// <summary>
+        /// This is a custom tool, it is not part of the standard ACE code. It has a dependency on the 1337006 weenie, which should be in the ACE.Database/Custom directory.
+        /// </summary>
+        public const uint CustomAestheticReductionTool = 1337006;
+
         // Some WCIDs have Overlay Icons that need to be removed (e.g. Olthoi Alduressa Gauntlets or Boots)
         // There are other examples not here, like some stamped shields that might need to be added, as well.
         private static Dictionary<uint, int> ArmorOverlayIcons = new Dictionary<uint, int>{
@@ -172,6 +177,10 @@ namespace ACE.Server.Entity
                 case DarkHeart:
 
                     WeaponApply(player, source, target);
+                    return;
+                case CustomAestheticReductionTool:
+                    TailorReduceArmor(player, source, target, false);
+                    TailorArmor(player, source, target);
                     return;
             }
 
@@ -324,12 +333,12 @@ namespace ACE.Server.Entity
         /// <summary>
         /// Reduces the coverage for a piece of armor
         /// </summary>
-        public static void TailorReduceArmor(Player player, WorldObject source, WorldObject target)
+        public static void TailorReduceArmor(Player player, WorldObject source, WorldObject target, bool checkWorkmanship = true)
         {
             //Console.WriteLine($"TailorReduceArmor({player.Name}, {source.Name}, {target.Name})");
 
             // Verify requirements - Can only reduce LootGen Armor
-            if (target.ItemWorkmanship == null)
+            if (target.ItemWorkmanship == null && checkWorkmanship)
             {
                 player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
                 return;
@@ -340,6 +349,8 @@ namespace ACE.Server.Entity
 
             switch (source.WeenieClassId)
             {
+                // TODO: Throw error if valid locations doesn't check out
+                case CustomAestheticReductionTool:
                 case ArmorMainReductionTool:
 
                     if (validLocations.HasFlag(EquipMask.ChestArmor))
@@ -357,6 +368,7 @@ namespace ACE.Server.Entity
                         player.UpdateProperty(target, PropertyInt.ValidLocations, (int)EquipMask.AbdomenArmor);
                         clothingPriority = CoverageMask.OuterwearAbdomen;
                     }
+
                     break;
 
                 case ArmorLowerReductionTool:
@@ -636,6 +648,7 @@ namespace ACE.Server.Entity
                 case WingedCoat:
                 case Tentacles:
                 case DarkHeart:
+                case CustomAestheticReductionTool:
 
                     return true;
 
